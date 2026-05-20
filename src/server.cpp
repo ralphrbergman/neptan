@@ -14,6 +14,11 @@ int main(int argc, char* argv[]) {
         GLOBAL_ARGV = argv;
     }
 
+    static Logger server_logger("server.log");
+    server_logger.open();
+
+    logger = &server_logger;
+
     asio::io_context context;
 
     // Tell ASIO to wait for new tasks to pop up and not exit automatically.
@@ -27,5 +32,6 @@ int main(int argc, char* argv[]) {
     // Clean up command-line interface thread.
     if (cliThread.joinable()) cliThread.join();
 
+    server_logger.close();
     return 0;
 }
