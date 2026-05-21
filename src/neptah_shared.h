@@ -7,6 +7,8 @@
 #include <source_location>
 #include <vector>
 
+using asio::ip::tcp;
+
 enum class LogLevel { DEBUG, INFO, WARNING, ERROR, CRITICAL };
 
 struct Logger {

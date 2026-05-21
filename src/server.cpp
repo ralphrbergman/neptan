@@ -14,6 +14,8 @@ int main(int argc, char* argv[]) {
         GLOBAL_ARGV = argv;
     }
 
+    unsigned short port = static_cast<unsigned short>(std::stoi(argv[1]));
+
     static Logger server_logger("server.log");
     server_logger.open();
 
@@ -26,6 +28,9 @@ int main(int argc, char* argv[]) {
 
     // Create a new thread to handle command-line input from the admin.
     std::thread cliThread(commandLineInterface, std::ref(context));
+
+    NetworkInterface interface(context, port);
+    interface.listen();
 
     context.run();
 

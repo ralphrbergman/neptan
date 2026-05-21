@@ -16,6 +16,18 @@ extern int GLOBAL_ARGC;
 extern char** GLOBAL_ARGV;
 extern std::map<std::string, CommandInfo> COMMANDS;
 
+struct NetworkInterface {
+    unsigned short port;
+
+    NetworkInterface(asio::io_context& context, unsigned short port):
+    port(port), _context(context), _acceptor(context, tcp::endpoint(tcp::v4(), port)) {}
+
+    void listen();
+private:
+    asio::ip::tcp::acceptor _acceptor;
+    asio::io_context& _context;
+};
+
 // Command-line interface entry method.
 bool commandLineInterface(asio::io_context& context);
 
