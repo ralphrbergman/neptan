@@ -29,7 +29,8 @@ int main(int argc, char* argv[]) {
     // Create a new thread to handle command-line input from the admin.
     std::thread cliThread(commandLineInterface, std::ref(context));
 
-    NetworkInterface interface(context, port);
+    ConnectionManager manager{};
+    NetworkInterface interface(context, port, manager);
     interface.listen();
 
     context.run();

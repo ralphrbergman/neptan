@@ -1,5 +1,6 @@
 #include "../neptah_shared.h"
 #include <functional>
+#include <unordered_set>
 
 struct CommandParameters {
     std::vector<std::string> arguments;
@@ -16,11 +17,41 @@ extern int GLOBAL_ARGC;
 extern char** GLOBAL_ARGV;
 extern std::map<std::string, CommandInfo> COMMANDS;
 
+// Forward declare ConnectionManager to satisfy Connection struct.
+struct ConnectionManager;
+
+struct Connection : public std::enable_shared_from_this<Connection> {
+    tcp::socket socket;
+    std::string username;
+
+    Connection(tcp::socket incoming_socket, std::string username, ConnectionManager& manager):
+    socket(std::move(incoming_socket)), username(username), _manager(manager) {}
+
+    void read();
+
+private:
+    std::array<char, 1024> _buffer;
+    ConnectionManager& _manager;
+};
+
+struct ConnectionManager {
+    void add(std::shared_ptr<Connection> connection);
+    void remove(std::shared_ptr<Connection> connection);
+
+private:
+    std::unordered_set<std::shared_ptr<Connection>> _connections;
+    uint64_t _user_id = 0;
+};
+
 struct NetworkInterface {
     unsigned short port;
+    ConnectionManager& manager;
 
-    NetworkInterface(asio::io_context& context, unsigned short port):
-    port(port), _context(context), _acceptor(context, tcp::endpoint(tcp::v4(), port)) {}
+    NetworkInterface(asio::io_context& context, unsigned short port, ConnectionManager& manager):
+    port(port),
+    _context(context),
+    _acceptor(context, tcp::endpoint(tcp::v4(), port)),
+    manager(manager) {}
 
     void listen();
 private:
