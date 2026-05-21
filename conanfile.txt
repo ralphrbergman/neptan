@@ -1,0 +1,7 @@
+[requires]
+asio/1.36.0
+nlohmann_json/3.12.0
+
+[generators]
+CMakeDeps
+CMakeToolchain

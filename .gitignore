@@ -1,4 +1,5 @@
 build/
 build.sh
+CMakeUserPresets.json
 client.log
 server.log
