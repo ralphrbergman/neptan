@@ -1,4 +1,7 @@
+#pragma once
+
 #include <asio.hpp>
+#include <nlohmann/json.hpp>
 #include <format>
 #include <fstream>
 #include <iostream>
@@ -8,6 +11,7 @@
 #include <vector>
 
 using asio::ip::tcp;
+using json = nlohmann::json;
 
 enum class LogLevel { DEBUG, INFO, WARNING, ERROR, CRITICAL };
 
@@ -59,3 +63,20 @@ private:
 };
 
 extern Logger* logger;
+
+inline std::string join_vector(
+    const std::vector<std::string>& vector,
+    const std::string& delimeter = " "
+) {
+    if (vector.empty()) return "";
+
+    std::stringstream ss;
+
+    ss << vector[0];
+
+    for (size_t index = 1; index < vector.size(); ++index) {
+        ss << delimeter << vector[index];
+    }
+
+    return ss.str();
+}

@@ -61,6 +61,21 @@ void Connection::read() {
         });
 }
 
+void Connection::send(const std::string json_payload) {
+    // Let the payload be its own thing even after async_write finishes executing.
+    auto safe_json_payload = std::make_shared<std::string>(json_payload);
+
+    asio::async_write(
+        this->socket,
+        asio::buffer(*safe_json_payload),
+        [this, safe_json_payload](const asio::error_code& error, size_t transferred) {
+            if (!error) {}
+            else {
+                logger->error(std::format("Send to client: {} failed!", this->username));
+            }
+        });
+}
+
 void ConnectionManager::add(std::shared_ptr<Connection> connection) {
     if (connection->username.empty()) {
         // By default users will have an anonymous username.
@@ -101,4 +116,17 @@ void ConnectionManager::remove(std::shared_ptr<Connection> connection) {
     connection->socket.close();
 
     logger->info(std::format("Disconnected user {}", connection->username));
+}
+
+void ConnectionManager::broadcast(
+    std::shared_ptr<Connection> connection,
+    const std::string json_payload
+) {
+    connection->send(json_payload);
+}
+
+void ConnectionManager::broadcast_all(const std::string json_payload) {
+    for (auto connection : _connections) {
+        this->broadcast(connection, json_payload);
+    }
 }

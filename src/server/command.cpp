@@ -1,12 +1,14 @@
+#include "../json.h"
 #include "shared.h"
 #include <sstream>
 
 std::map<std::string, CommandInfo> COMMANDS = {
-    { "help", { help, "Displays this menu." } },
-    { "quit", { quit, "Disconnects everyone and quits." } }
+    { "help", { Commands::help, "Displays this menu." } },
+    { "send", { Commands::send, "Sends a global message." } },
+    { "quit", { Commands::quit, "Disconnects everyone and quits." } }
 };
 
-bool commandLineInterface(asio::io_context& context) {
+bool commandLineInterface(asio::io_context& context, ConnectionManager& manager) {
     while (true) {
         std::string raw;
 
@@ -33,7 +35,7 @@ bool commandLineInterface(asio::io_context& context) {
         auto callback = COMMANDS.find(command);
 
         if (callback != COMMANDS.end()) {
-            bool keepOn = callback->second.command(CommandParameters{arguments, context});
+            bool keepOn = callback->second.command(CommandParameters{arguments, context, manager});
 
             if (!keepOn) return false;
         }
@@ -43,7 +45,7 @@ bool commandLineInterface(asio::io_context& context) {
     return true;
 }
 
-bool help(CommandParameters params) {
+bool Commands::help(CommandParameters params) {
     std::printf("Usage: %s [port]\n", GLOBAL_ARGV[0]);
 
     std::printf("Arguments:\n");
@@ -57,7 +59,19 @@ bool help(CommandParameters params) {
     return true;
 }
 
-bool quit(CommandParameters params) {
+bool Commands::send(CommandParameters params) {
+    // Join vector of strings into one string so it can be transmitted over the net.
+    std::string content = join_vector(params.arguments);
+
+    Message message("Server", content);
+    std::string packet = json(message).dump();
+
+    params.manager.broadcast_all(packet);
+
+    return true;
+}
+
+bool Commands::quit(CommandParameters params) {
     std::printf("Shutdown initiated by administrator.\n");
 
     params.context.stop();

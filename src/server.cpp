@@ -22,14 +22,14 @@ int main(int argc, char* argv[]) {
     logger = &server_logger;
 
     asio::io_context context;
+    ConnectionManager manager{};
 
     // Tell ASIO to wait for new tasks to pop up and not exit automatically.
     auto work_guard = asio::make_work_guard(context);
 
     // Create a new thread to handle command-line input from the admin.
-    std::thread cliThread(commandLineInterface, std::ref(context));
+    std::thread cliThread(commandLineInterface, std::ref(context), std::ref(manager));
 
-    ConnectionManager manager{};
     NetworkInterface interface(context, port, manager);
     interface.listen();
 

@@ -1,10 +1,15 @@
+#pragma once
+
 #include "../neptah_shared.h"
 #include <functional>
 #include <unordered_set>
 
+struct ConnectionManager;
+
 struct CommandParameters {
     std::vector<std::string> arguments;
     asio::io_context& context;
+    ConnectionManager& manager;
 };
 
 using CommandCallback = std::function<bool(CommandParameters)>;
@@ -28,6 +33,7 @@ struct Connection : public std::enable_shared_from_this<Connection> {
     socket(std::move(incoming_socket)), username(username), _manager(manager) {}
 
     void read();
+    void send(const std::string json_payload);
 
 private:
     std::array<char, 1024> _buffer;
@@ -37,6 +43,8 @@ private:
 struct ConnectionManager {
     void add(std::shared_ptr<Connection> connection);
     void remove(std::shared_ptr<Connection> connection);
+    void broadcast(std::shared_ptr<Connection> connection, const std::string json_payload);
+    void broadcast_all(const std::string json_payload);
 
 private:
     std::unordered_set<std::shared_ptr<Connection>> _connections;
@@ -60,8 +68,11 @@ private:
 };
 
 // Command-line interface entry method.
-bool commandLineInterface(asio::io_context& context);
+bool commandLineInterface(asio::io_context& context, ConnectionManager& manager);
 
 // Command-line command callbacks.
-bool help(CommandParameters);
-bool quit(CommandParameters);
+namespace Commands {
+    bool help(CommandParameters);
+    bool send(CommandParameters);
+    bool quit(CommandParameters);
+}
