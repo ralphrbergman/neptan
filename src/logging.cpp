@@ -1,5 +1,6 @@
 #include "neptah_shared.h"
 #include <chrono>
+#include <filesystem>
 
 template <>
 struct std::formatter<LogLevel> : std::formatter<std::string_view> {
@@ -47,11 +48,12 @@ void Logger::log(
     const std::string& message,
     const std::source_location source
 ) {
+    const std::string filename = std::filesystem::path(source.file_name()).filename().string();
     const std::string log_message = std::format(
         "[{}] {} | {}:{} - {}\n",
         _current_time(),
         level,
-        source.file_name(),
+        filename,
         source.line(),
         message
     );
