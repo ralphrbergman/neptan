@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(asio REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
+# Server #
 add_executable(
     server
     src/server.cpp
@@ -22,3 +23,13 @@ target_link_libraries(
         asio::asio
         nlohmann_json::nlohmann_json
 )
+
+# Client #
+add_executable(
+    client
+    src/client.cpp
+    src/logging.cpp
+    src/client/network.cpp
+)
+
+target_link_libraries(client PRIVATE asio::asio nlohmann_json::nlohmann_json)

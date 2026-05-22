@@ -18,8 +18,6 @@ struct CommandInfo {
     std::string description;
 };
 
-extern int GLOBAL_ARGC;
-extern char** GLOBAL_ARGV;
 extern std::map<std::string, CommandInfo> COMMANDS;
 
 // Forward declare ConnectionManager to satisfy Connection struct.

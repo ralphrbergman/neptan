@@ -1,5 +1,4 @@
 #include "server/shared.h"
-#include <thread>
 
 int GLOBAL_ARGC = 0;
 char** GLOBAL_ARGV = nullptr;

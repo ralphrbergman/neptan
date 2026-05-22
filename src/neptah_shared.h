@@ -2,16 +2,21 @@
 
 #include <asio.hpp>
 #include <nlohmann/json.hpp>
+
 #include <format>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <string>
 #include <source_location>
+#include <thread>
 #include <vector>
 
 using asio::ip::tcp;
 using json = nlohmann::json;
+
+extern int GLOBAL_ARGC;
+extern char** GLOBAL_ARGV;
 
 enum class LogLevel { DEBUG, INFO, WARNING, ERROR, CRITICAL };
 
