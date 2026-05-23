@@ -102,8 +102,7 @@ void NetworkInterface::connect() {
             if (!error) {
                 logger->info("Successfully established connection.");
 
-                // TODO: Implement reading loop.
-                this->disconnect();
+                this->_read_header();
             }
             else if (error != asio::error::operation_aborted) {
                 logger->error(std::format(
@@ -137,4 +136,37 @@ void NetworkInterface::disconnect() {
     _socket.shutdown(tcp::socket::shutdown_both, error);
 
     _socket.close();
+}
+
+void NetworkInterface::receive() {}
+
+void NetworkInterface::send(const std::string& message) {}
+
+void NetworkInterface::_read_body() {
+    _buffer.resize(_body_length);
+
+    asio::async_read(
+        _socket,
+        asio::buffer(_buffer),
+        [this] (const asio::error_code& error, size_t transferred) {
+            if (!error) {
+                std::string json_payload(_buffer.begin(), _buffer.begin() + transferred);
+
+                // Process next receive event.
+                this->_read_header();
+            }
+            else _socket.close();
+        });
+}
+
+void NetworkInterface::_read_header() {
+    asio::async_read(
+        _socket,
+        asio::buffer(&_body_length, sizeof(_body_length)),
+        [this] (const asio::error_code& error, size_t transferred) {
+            if (!error) {
+                this->_read_body();
+            }
+            else _socket.close();
+        });
 }
