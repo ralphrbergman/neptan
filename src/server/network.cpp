@@ -1,4 +1,5 @@
 #include "shared.h"
+#include "../json.h"
 
 void NetworkInterface::listen() {
     auto socket = std::make_shared<tcp::socket>(_context);
@@ -62,12 +63,20 @@ void Connection::read() {
 }
 
 void Connection::send(const std::string json_payload) {
-    // Let the payload be its own thing even after async_write finishes executing.
-    auto safe_json_payload = std::make_shared<std::string>(json_payload);
+    uint32_t body_length = static_cast<uint32_t>(json_payload.size());
+    auto safe_json_payload = std::make_shared<std::pair<uint32_t, std::string>>(
+        body_length,
+        json_payload
+    );
+
+    std::array<asio::const_buffer, 2> buffers = {
+        asio::buffer(&(safe_json_payload->first), sizeof(uint32_t)),
+        asio::buffer(safe_json_payload->second)
+    };
 
     asio::async_write(
         this->socket,
-        asio::buffer(*safe_json_payload),
+        buffers,
         [this, safe_json_payload](const asio::error_code& error, size_t transferred) {
             if (!error) {}
             else {
@@ -99,6 +108,9 @@ void ConnectionManager::add(std::shared_ptr<Connection> connection) {
                 endpoint.port()
             )
         );
+
+        Message welcome_message("Server", std::format("'Sup, {}", connection->username));
+        this->broadcast_all(json(welcome_message).dump());
     }
     else {
         logger->error(
