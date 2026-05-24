@@ -13,6 +13,7 @@ add_executable(
     server
     src/server.cpp
     src/logging.cpp
+    src/neptah_shared.cpp
     src/server/command.cpp
     src/server/network.cpp
 )
@@ -29,6 +30,7 @@ add_executable(
     client
     src/client.cpp
     src/logging.cpp
+    src/neptah_shared.cpp
     src/client/network.cpp
 )
 

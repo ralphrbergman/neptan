@@ -10,13 +10,22 @@ inline uint64_t get_timestamp() {
     );
 }
 
-struct Message {
-    Message(std::string username, std::string content):
-    username(username), content(content), timestamp(get_timestamp()) {}
+struct Base {
+    Base():
+    created_at(get_timestamp()) {}
 
-    std::string username;
-    std::string content;
-    uint64_t timestamp;
+    uint64_t created_at;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Base, created_at)
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Message, username, content, timestamp)
+struct Message {
+    Message(std::string username, std::string content):
+    username(username), content(content) {}
+
+    Base header;
+    std::string username;
+    std::string content;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Message, username, content)
+};

@@ -31,7 +31,9 @@ struct Connection : public std::enable_shared_from_this<Connection> {
     socket(std::move(incoming_socket)), username(username), _manager(manager) {}
 
     void read();
-    void send(const std::string json_payload);
+    template <typename T>
+    void send_json(const T& parseable);
+    void send(const std::string message);
 
 private:
     std::array<char, 1024> _buffer;
@@ -41,8 +43,8 @@ private:
 struct ConnectionManager {
     void add(std::shared_ptr<Connection> connection);
     void remove(std::shared_ptr<Connection> connection);
-    void broadcast(std::shared_ptr<Connection> connection, const std::string json_payload);
-    void broadcast_all(const std::string json_payload);
+    void broadcast(std::shared_ptr<Connection> connection, const std::string message);
+    void broadcast_all(const std::string message);
 
 private:
     std::unordered_set<std::shared_ptr<Connection>> _connections;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../neptah_shared.h"
+#include "../json.h"
 
 struct NetworkInterface {
     std::string address;
@@ -12,6 +13,8 @@ struct NetworkInterface {
     void connect();
     void disconnect();
     void receive();
+    template <typename T>
+    void send_json(const T& parseable);
     void send(const std::string& message);
 
 private:

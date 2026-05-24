@@ -42,6 +42,7 @@ void NetworkInterface::resolve_and_connect() {
                 logger->info("Successfully resolved address.");
 
                 this->_endpoints = endpoints;
+                retry_count = 0;
                 this->connect();
             }
             else {
@@ -140,7 +141,14 @@ void NetworkInterface::disconnect() {
 
 void NetworkInterface::receive() {}
 
-void NetworkInterface::send(const std::string& message) {}
+template <typename T>
+void NetworkInterface::send_json(const T& parseable) {
+    neptah::send_json(this->_socket, parseable);
+}
+
+void NetworkInterface::send(const std::string& message) {
+    neptah::send(this->_socket, message);
+}
 
 void NetworkInterface::_read_body() {
     _buffer.resize(_body_length);

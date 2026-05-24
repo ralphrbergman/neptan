@@ -62,27 +62,13 @@ void Connection::read() {
         });
 }
 
-void Connection::send(const std::string json_payload) {
-    uint32_t body_length = static_cast<uint32_t>(json_payload.size());
-    auto safe_json_payload = std::make_shared<std::pair<uint32_t, std::string>>(
-        body_length,
-        json_payload
-    );
+template <typename T>
+void Connection::send_json(const T& parseable) {
+    neptah::send_json(this->socket, parseable);
+}
 
-    std::array<asio::const_buffer, 2> buffers = {
-        asio::buffer(&(safe_json_payload->first), sizeof(uint32_t)),
-        asio::buffer(safe_json_payload->second)
-    };
-
-    asio::async_write(
-        this->socket,
-        buffers,
-        [this, safe_json_payload](const asio::error_code& error, size_t transferred) {
-            if (!error) {}
-            else {
-                logger->error(std::format("Send to client: {} failed!", this->username));
-            }
-        });
+void Connection::send(const std::string message) {
+    neptah::send(this->socket, message);
 }
 
 void ConnectionManager::add(std::shared_ptr<Connection> connection) {
@@ -132,13 +118,13 @@ void ConnectionManager::remove(std::shared_ptr<Connection> connection) {
 
 void ConnectionManager::broadcast(
     std::shared_ptr<Connection> connection,
-    const std::string json_payload
+    const std::string message
 ) {
-    connection->send(json_payload);
+    connection->send(message);
 }
 
-void ConnectionManager::broadcast_all(const std::string json_payload) {
+void ConnectionManager::broadcast_all(const std::string message) {
     for (auto connection : _connections) {
-        this->broadcast(connection, json_payload);
+        this->broadcast(connection, message);
     }
 }
