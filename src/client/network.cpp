@@ -139,8 +139,6 @@ void NetworkInterface::disconnect() {
     _socket.close();
 }
 
-void NetworkInterface::receive() {}
-
 template <typename T>
 void NetworkInterface::send_json(const T& parseable) {
     neptah::send_json(this->_socket, parseable);

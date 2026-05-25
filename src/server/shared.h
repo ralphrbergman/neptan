@@ -31,14 +31,17 @@ struct Connection : public std::enable_shared_from_this<Connection> {
     Connection(tcp::socket incoming_socket, std::string username, ConnectionManager& manager):
     socket(std::move(incoming_socket)), username(username), _manager(manager) {}
 
-    void read();
+    void read_header();
     template <typename T>
     void send_json(const T& parseable);
     void send(const std::string message);
 
 private:
-    std::array<char, 1024> _buffer;
+    uint32_t _body_length = 0;
+    std::vector<char> _buffer;
     ConnectionManager& _manager;
+
+    void _read_body();
 };
 
 struct ConnectionManager {

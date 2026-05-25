@@ -12,7 +12,7 @@ void NetworkInterface::listen() {
                 auto connection = std::make_shared<Connection>(std::move(socket), "", manager);
                 manager.add(connection);
 
-                connection->read();
+                connection->read_header();
             }
             else {
                 logger->error(
@@ -42,22 +42,32 @@ void NetworkInterface::listen() {
     });
 }
 
-void Connection::read() {
-    // Ensure the connection to stay alive whilst waiting for network.
-    auto self(shared_from_this());
+void Connection::_read_body() {
+    _buffer.resize(_body_length);
 
-    socket.async_read_some(
+    asio::async_read(
+        this->socket,
         asio::buffer(_buffer),
-        [this, self](asio::error_code error, std::size_t transferred) {
+        [this] (const asio::error_code& error, size_t transferred) {
             if (!error) {
-                this->read();
-            }
-            else {
-                if (error == asio::error::eof) {}
-                else if (error == asio::error::connection_reset) {}
+                std::string json_payload(_buffer.begin(), _buffer.begin() + transferred);
 
-                _manager.remove(self);
+                logger->info(std::format("Received: {}", json_payload));
+
+                this->read_header();
             }
+        });
+}
+
+void Connection::read_header() {
+    asio::async_read(
+        this->socket,
+        asio::buffer(&_body_length, sizeof(_body_length)),
+        [this] (const asio::error_code& error, size_t transferred) {
+            if (!error) {
+                this->_read_body();
+            }
+            else this->socket.close();
         });
 }
 

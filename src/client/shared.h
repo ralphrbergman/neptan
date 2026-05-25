@@ -12,7 +12,6 @@ struct NetworkInterface {
     void resolve_and_connect();
     void connect();
     void disconnect();
-    void receive();
     template <typename T>
     void send_json(const T& parseable);
     void send(const std::string& message);
