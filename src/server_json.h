@@ -1,5 +1,6 @@
 #pragma once
 #include "neptah_shared.h"
+#include "client_json.h"
 
 inline uint64_t get_timestamp() {
     auto now = std::chrono::system_clock::now();
@@ -19,13 +20,11 @@ struct Base {
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Base, created_at)
 };
 
-struct Message {
-    Message(std::string username, std::string content):
-    username(username), content(content) {}
+struct ServerMessage : public ClientMessage {
+    ServerMessage(std::string username, std::string content):
+    ClientMessage(username, content) {}
 
     Base header;
-    std::string username;
-    std::string content;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Message, username, content)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(ServerMessage, username, content)
 };

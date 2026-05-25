@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../client_json.h"
 #include "../neptah_shared.h"
-#include "../json.h"
 
 struct NetworkInterface {
     std::string address;

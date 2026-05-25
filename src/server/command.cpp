@@ -1,4 +1,4 @@
-#include "../json.h"
+#include "../server_json.h"
 #include "shared.h"
 #include <sstream>
 
@@ -63,7 +63,7 @@ bool Commands::send(CommandParameters params) {
     // Join vector of strings into one string so it can be transmitted over the net.
     std::string content = join_vector(params.arguments);
 
-    Message message("Server", content);
+    ServerMessage message("Server", content);
     std::string packet = json(message).dump();
 
     params.manager.broadcast_all(packet);

@@ -147,7 +147,7 @@ void NetworkInterface::send_json(const T& parseable) {
 }
 
 void NetworkInterface::send(const std::string& message) {
-    neptah::send(this->_socket, message);
+    neptah::send<ClientMessage>(this->_socket, "User", message);
 }
 
 void NetworkInterface::_read_body() {

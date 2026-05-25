@@ -1,5 +1,4 @@
 #include "shared.h"
-#include "../json.h"
 
 void NetworkInterface::listen() {
     auto socket = std::make_shared<tcp::socket>(_context);
@@ -68,7 +67,7 @@ void Connection::send_json(const T& parseable) {
 }
 
 void Connection::send(const std::string message) {
-    neptah::send(this->socket, message);
+    neptah::send<ServerMessage>(this->socket, "Server", message);
 }
 
 void ConnectionManager::add(std::shared_ptr<Connection> connection) {
@@ -95,8 +94,8 @@ void ConnectionManager::add(std::shared_ptr<Connection> connection) {
             )
         );
 
-        Message welcome_message("Server", std::format("'Sup, {}", connection->username));
-        this->broadcast_all(json(welcome_message).dump());
+        auto welcome_message = std::format("'Sup, {}", connection->username);
+        this->broadcast_all(welcome_message);
     }
     else {
         logger->error(

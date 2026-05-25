@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../server_json.h"
 #include "../neptah_shared.h"
 #include <functional>
 #include <unordered_set>
