@@ -3,7 +3,7 @@
 void NetworkInterface::listen() {
     auto socket = std::make_shared<tcp::socket>(_context);
 
-    _acceptor.async_accept([this](const asio::error_code& error, tcp::socket socket) {
+    _acceptor.async_accept([this] (const asio::error_code& error, tcp::socket socket) {
         if (!error) {
             asio::error_code endpoint_error;
             auto endpoint = socket.remote_endpoint(endpoint_error);
@@ -14,12 +14,7 @@ void NetworkInterface::listen() {
 
                 connection->read_header();
             }
-            else {
-                logger->error(
-                    std::format("Client disconnected after accept: {}",
-                    endpoint_error.message()
-                ));
-            }
+            else logger->error("Client disconnected before could identify.");
         }
         else {
             if (error == asio::error::connection_aborted) {
@@ -42,32 +37,42 @@ void NetworkInterface::listen() {
     });
 }
 
+void NetworkInterface::terminate() {
+    _acceptor.close();
+    manager.remove_all();
+    _context.stop();
+}
+
 void Connection::_read_body() {
     _buffer.resize(_body_length);
+    auto self(shared_from_this());
 
     asio::async_read(
         this->socket,
         asio::buffer(_buffer),
-        [this] (const asio::error_code& error, size_t transferred) {
+        [this, self] (const asio::error_code& error, size_t transferred) {
             if (!error) {
                 std::string json_payload(_buffer.begin(), _buffer.begin() + transferred);
 
-                logger->info(std::format("Received: {}", json_payload));
+                logger->info(std::format("Received: {}\nFrom: {}", json_payload, this->username));
 
                 this->read_header();
             }
+            else _manager.remove(self);
         });
 }
 
 void Connection::read_header() {
+    auto self = shared_from_this();
+
     asio::async_read(
         this->socket,
         asio::buffer(&_body_length, sizeof(_body_length)),
-        [this] (const asio::error_code& error, size_t transferred) {
+        [this, self] (const asio::error_code& error, size_t transferred) {
             if (!error) {
                 this->_read_body();
             }
-            else this->socket.close();
+            else _manager.remove(self);
         });
 }
 
@@ -123,6 +128,15 @@ void ConnectionManager::remove(std::shared_ptr<Connection> connection) {
     connection->socket.close();
 
     logger->info(std::format("Disconnected user {}", connection->username));
+}
+
+void ConnectionManager::remove_all() {
+    // Copy set of connections so we don't mutate whilst iterating.
+    auto connections = _connections;
+
+    for (auto connection : connections) {
+        this->remove(connection);
+    }
 }
 
 void ConnectionManager::broadcast(

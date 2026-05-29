@@ -26,16 +26,17 @@ int main(int argc, char* argv[]) {
     // Tell ASIO to wait for new tasks to pop up and not exit automatically.
     auto work_guard = asio::make_work_guard(context);
 
-    // Create a new thread to handle command-line input from the admin.
-    std::thread cliThread(commandLineInterface, std::ref(context), std::ref(manager));
-
     NetworkInterface interface(context, port, manager);
     interface.listen();
 
-    context.run();
+    commandLineInterface(context, manager);
 
-    // Clean up command-line interface thread.
-    if (cliThread.joinable()) cliThread.join();
+    asio::signal_set signals(context, SIGINT, SIGTERM);
+    signals.async_wait([&interface] (const asio::error_code& error, int signal_no) {
+        interface.terminate();
+    });
+
+    context.run();
 
     server_logger.close();
     return 0;

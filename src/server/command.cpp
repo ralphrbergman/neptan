@@ -3,44 +3,67 @@
 #include <sstream>
 
 std::map<std::string, CommandInfo> COMMANDS = {
+    { "clear", { Commands::clear, "Clears output." } },
     { "help", { Commands::help, "Displays this menu." } },
     { "send", { Commands::send, "Sends a global message." } },
     { "quit", { Commands::quit, "Disconnects everyone and quits." } }
 };
 
-bool commandLineInterface(asio::io_context& context, ConnectionManager& manager) {
-    while (true) {
-        std::string raw;
+void commandLineInterface(asio::io_context& context, ConnectionManager& manager) {
+    auto input = std::make_shared<asio::posix::stream_descriptor>(context, ::dup(STDIN_FILENO));
+    auto buffer = std::make_shared<asio::streambuf>();
 
-        std::printf("$ ");
-        std::fflush(stdout);
-        if (!getline(std::cin, raw)) {
-            break;
+    auto _read = std::make_shared<std::function<void(asio::error_code, size_t)>>();
+
+    *_read = [&context, &manager, input, buffer, _read] (asio::error_code error, size_t length) {
+        if (!error) {
+            std::string raw;
+            std::istream is(buffer.get());
+            std::getline(is, raw);
+
+            std::stringstream ss(raw);
+            std::string command;
+            std::vector<std::string> arguments;
+
+            if (!(ss >> command)) {
+                std::cout << "$ " << std::flush;
+                asio::async_read_until(*input, *buffer, '\n', *_read);
+                return;
+            }
+
+            // Add unexpected amount of arguments into a vector.
+            std::string argument;
+            while (ss >> argument) {
+                arguments.push_back(argument);
+            }
+
+            // Dynamically find the command callback and execute it.
+            auto callback = COMMANDS.find(command);
+            // Commands will return a boolean whether to continue reading or not.
+            bool keepOn = true;
+
+            if (callback != COMMANDS.end()) {
+                keepOn = callback->second.command(CommandParameters{
+                    arguments,
+                    context,
+                    manager
+                });
+            }
+            else std::printf("Command: %s doesn't exist.\n", command.c_str());
+
+            if (!keepOn) return;
+
+            std::cout << "$ " << std::flush;
+            asio::async_read_until(*input, *buffer, '\n', *_read);
         }
+    };
 
-        std::stringstream ss(raw);
+    std::cout << "$ " << std::flush;
+    asio::async_read_until(*input, *buffer, '\n', *_read);
+}
 
-        std::string command;
-        std::vector<std::string> arguments;
-
-        if (!(ss >> command)) continue;
-
-        // Add unexpected amount of arguments into a vector.
-        std::string argument;
-        while (ss >> argument) {
-            arguments.push_back(argument);
-        }
-
-        // Dynamically find the command callback and execute it.
-        auto callback = COMMANDS.find(command);
-
-        if (callback != COMMANDS.end()) {
-            bool keepOn = callback->second.command(CommandParameters{arguments, context, manager});
-
-            if (!keepOn) return false;
-        }
-        else std::printf("Command: %s doesn't exist.\n", command.c_str());
-    }
+bool Commands::clear(CommandParameters params) {
+    std::cout << "\033[2J\033[1;H" << std::flush;
 
     return true;
 }

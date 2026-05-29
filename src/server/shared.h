@@ -47,6 +47,7 @@ private:
 struct ConnectionManager {
     void add(std::shared_ptr<Connection> connection);
     void remove(std::shared_ptr<Connection> connection);
+    void remove_all();
     void broadcast(std::shared_ptr<Connection> connection, const std::string message);
     void broadcast_all(const std::string message);
 
@@ -66,16 +67,18 @@ struct NetworkInterface {
     manager(manager) {}
 
     void listen();
+    void terminate();
 private:
     asio::ip::tcp::acceptor _acceptor;
     asio::io_context& _context;
 };
 
 // Command-line interface entry method.
-bool commandLineInterface(asio::io_context& context, ConnectionManager& manager);
+void commandLineInterface(asio::io_context& context, ConnectionManager& manager);
 
 // Command-line command callbacks.
 namespace Commands {
+    bool clear(CommandParameters);
     bool help(CommandParameters);
     bool send(CommandParameters);
     bool quit(CommandParameters);
