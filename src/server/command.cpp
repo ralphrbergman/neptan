@@ -62,11 +62,7 @@ bool Commands::help(CommandParameters params) {
 bool Commands::send(CommandParameters params) {
     // Join vector of strings into one string so it can be transmitted over the net.
     std::string content = join_vector(params.arguments);
-
-    ServerMessage message("Server", content);
-    std::string packet = json(message).dump();
-
-    params.manager.broadcast_all(packet);
+    params.manager.broadcast_all(content);
 
     return true;
 }
