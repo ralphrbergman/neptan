@@ -8,3 +8,10 @@ Neptan is a chatting app written in C++/ASIO.
 4. `mkdir build`
 5. Install Conan dependencies: `conan install . --output-folder=build --build=missing` (this must be run only once, if **build** directory gets deleted, you need to run this command again)
 6. Build the project: `cmake -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && cmake --build build/ -- -j$(nproc)`
+
+## Usage
+1. After you have built yourself the server & client run `server localhost 5000`; It will run the server on port 5000 available to only programs running within your computer.
+2. Run the client: `build/client 5000`.
+
+## License
+This project is licensed under the MIT license available in the LICENSE file and here: https://opensource.org/license/mit
