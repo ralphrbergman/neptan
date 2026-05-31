@@ -69,6 +69,20 @@ private:
 
 extern Logger* logger;
 
+enum class PacketType {
+    Disconnect,
+    Message,
+    UsernameAcceptance,
+    UsernameRequest
+};
+
+NLOHMANN_JSON_SERIALIZE_ENUM(PacketType, {
+    { PacketType::Disconnect, "disconnect" },
+    { PacketType::Message, "message" },
+    { PacketType::UsernameAcceptance, "name_acceptance" },
+    { PacketType::UsernameRequest, "name_request" }
+})
+
 namespace neptah {
     template <typename T>
     void send_json(tcp::socket& socket, const T& parseable);

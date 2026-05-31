@@ -53,8 +53,47 @@ void Connection::_read_body() {
         [this, self] (const asio::error_code& error, size_t transferred) {
             if (!error) {
                 std::string json_payload(_buffer.begin(), _buffer.begin() + transferred);
+                // TODO: Create a shared function that obtains JSON object
+                // and is written only once.
+                auto json = nlohmann::json::parse(json_payload);
+                auto packet_type = json.at("header").at("type").get<PacketType>();
 
-                logger->info(std::format("Received: {}\nFrom: {}", json_payload, this->username));
+                switch (packet_type) {
+                    case PacketType::Disconnect: {
+                        auto packet = json.get<Disconnect>();
+
+                        _manager.remove(shared_from_this());
+                    }
+
+                    case PacketType::Message: {
+                        auto message = json.get<ServerMessage>();
+                        // Ignore malformed messages.
+                        if (message.username.size() == 0 || message.content.size() == 0) break;
+
+                        std::cout << std::format(
+                            "{}: {}",
+                            message.username,
+                            message.content
+                        ) << std::endl;
+
+                        break;
+                    }
+
+                    case PacketType::UsernameRequest: {
+                        auto letter = json.get<UsernameRequest>();
+                        UsernameAcceptance send_letter(
+                            letter.username,
+                            letter.username != "Server"
+                        );
+
+                        if (send_letter.accepted) this->username = send_letter.username;
+                        this->send_json(send_letter);
+
+                        break;
+                    }
+
+                    default: break;
+                }
 
                 this->read_header();
             }
@@ -93,6 +132,9 @@ void ConnectionManager::add(std::shared_ptr<Connection> connection) {
 
         connection->username = username;
     }
+
+    // Notify user about their username in the chat room.
+    connection->send_json(UsernameAcceptance(connection->username, true));
 
     asio::error_code error;
     tcp::endpoint endpoint = connection->socket.remote_endpoint(error);

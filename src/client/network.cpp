@@ -132,11 +132,16 @@ void NetworkInterface::connect() {
 }
 
 void NetworkInterface::disconnect() {
-    // TODO: Create a packet to notify the server I am leaving the chatroom.
+    send_json(Disconnect());
+
     asio::error_code error;
     _socket.shutdown(tcp::socket::shutdown_both, error);
 
     _socket.close();
+}
+
+void NetworkInterface::request_username(std::string username) {
+    this->send_json(UsernameRequest(username));
 }
 
 template <typename T>
@@ -145,7 +150,7 @@ void NetworkInterface::send_json(const T& parseable) {
 }
 
 void NetworkInterface::send(const std::string& message) {
-    neptah::send<ClientMessage>(this->_socket, "User", message);
+    neptah::send<ClientMessage>(this->_socket, this->username, message);
 }
 
 void NetworkInterface::_read_body() {
@@ -157,8 +162,34 @@ void NetworkInterface::_read_body() {
         [this] (const asio::error_code& error, size_t transferred) {
             if (!error) {
                 std::string json_payload(_buffer.begin(), _buffer.begin() + transferred);
+                auto json = nlohmann::json::parse(json_payload);
+                auto packet_type = json.at("header").at("type").get<PacketType>();
 
-                // Process next receive event.
+                switch (packet_type) {
+                    case PacketType::Message: {
+                        auto message = json.get<ClientMessage>();
+
+                        std::cout << std::format(
+                            "{}: {}",
+                            message.username,
+                            message.content
+                        ) << std::endl;
+
+                        break;
+                    }
+
+                    case PacketType::UsernameAcceptance: {
+                        auto letter = json.get<UsernameAcceptance>();
+
+                        if (letter.accepted) {
+                            this->username = letter.username;
+                            logger->debug(std::format("Username assigned: {}", letter.username));
+                        }
+                    }
+
+                    default: break;
+                }
+
                 this->_read_header();
             }
             else _socket.close();
